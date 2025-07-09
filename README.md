@@ -33,8 +33,8 @@ Assignment:
 Familiarize yourself with the API's, and write down (and submit to us) how you would approach the assignment to satisfy the user requirements above.
  
 Choose one of these options for your solution:
--You can submit in writing how you would solve the assignment with a focus on explaining your thought process and considerations for the solution.
+- You can submit in writing how you would solve the assignment with a focus on explaining your thought process and considerations for the solution.
 or
--Submit a code solution to the assignment.
+- Submit a code solution to the assignment.
 
 At the technical interview you are expected to present your solution and talk about the choices you have made.
