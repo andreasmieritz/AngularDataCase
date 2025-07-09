@@ -37,4 +37,4 @@ Choose one of these options for your solution:
 - You can submit in writing how you would solve the assignment with a focus on explaining your thought process and considerations for the solution.
 - Submit a code solution to the assignment.
 
-At the technical interview you are expected to present your solution and talk about the choices you have made.**
+At the technical interview you are expected to present your solution and talk about the choices you have made.
