@@ -1,85 +1,51 @@
-<h1 id="tableLabel">Analytics Table</h1>
+<div class="container">
+  <div class="form-control">
+    <label for="datasetSelect">Select Dataset:</label>
+    <select id="datasetSelect" [(ngModel)]="selectedDataSet">
+      <option *ngFor="let ds of dataSets" [ngValue]="ds">{{ ds.displayName }}</option>
+    </select>
+  </div>
+  <div class="form-control">
+    <label for="groupingSelect">Select Grouping:</label>
+    <select id="groupingSelect" [(ngModel)]="selectedGrouping">
+      <option *ngFor="let g of groupings" [ngValue]="g">{{ g.displayName }}</option>
+    </select>
+  </div>
+  <div class="form-control">
+    <label for="analyticsSelect">Select Analytics:</label>
+    <select id="analyticsSelect" [(ngModel)]="selectedAnalytics">
+      <option *ngFor="let a of analytics" [ngValue]="a">{{ a.displayName }}</option>
+    </select>
+  </div>
+  <button (click)="loadData()" [disabled]="isLoading || !selectedDataSet || !selectedGrouping || !selectedAnalytics">
+    {{ isLoading ? 'Loading...' : 'Load Data' }}
+  </button>
 
-<p>This component demonstrates fetching data from the server.</p>
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
 
-<p *ngIf="!dataSets"><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationangular">https://aka.ms/jspsintegrationangular</a> for more details.</em></p>
+  <div *ngIf="nodeResults.length > 0 && !isLoading" class="table-container">
+    <h2>Results</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Node Name</th>
+           <th>{{ displayedAnalytics?.displayName || 'Analytic' }}</th>
+        </tr>
+      </thead>
+     <tbody class="table-body-container">
+        <tr *ngFor="let nodeResult of nodeResults">
+          <td>{{ nodeResult.nodeName }}</td>
+          <td>{{ nodeResult.result }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-DataSets:
-<table *ngIf="dataSets">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let dataSet of dataSets">
-      <td>{{ dataSet.id }}</td>
-      <td>{{ dataSet.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+  <div *ngIf="isLoading" class="loading">
+    Loading data...
+  </div>
+</div>
 
-Groupings:
-<table *ngIf="groupings">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let grouping of groupings">
-      <td>{{ grouping.id }}</td>
-      <td>{{ grouping.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
 
-Analytics:
-<table *ngIf="analytics">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let analytic of analytics">
-      <td>{{ analytic.id }}</td>
-      <td>{{ analytic.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
-
-Node Names for grouping=SECURITY:
-<table *ngIf="groupingNodes">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let groupingNode of groupingNodes">
-      <td>{{ groupingNode.id }}</td>
-      <td>{{ groupingNode.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
-
-Calculation results for Analytic=A1, DataSet=0, grouping=SECURITY:
-<table *ngIf="calculatedAnalytics">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Result</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let calculatedAnalytic of calculatedAnalytics">
-      <td>{{ calculatedAnalytic.id }}</td>
-      <td>{{ calculatedAnalytic.result }}</td>
-    </tr>
-  </tbody>
-</table>
