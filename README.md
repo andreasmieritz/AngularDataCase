@@ -1,3 +1,4 @@
+# Repository
 In this repository you will find a sample project of Angular frontend with a C# Asp.NET backend.
  
 5 endpoints are exposed from the backend.
@@ -8,7 +9,7 @@ In this repository you will find a sample project of Angular frontend with a C# 
 - Fourth one fetches names for ALL nodes in a specific grouping
 - Fifth one calculates one analytic for one grouping+dataset combi, and importantly, it returns data ONLY for the nodes where data can be calculated.
  
-User Requirements:
+# User Requirements:
  
 - Our user does not care about any ID's, only useful names, described by "DisplayName". The API's however only work with ID's.
  
@@ -29,12 +30,11 @@ Individual nodes are identified by their ID (see ID field of both grouping nodes
 Please also note that while calculations are simulated, there is a delay of calculating analytics, simulated through Thread.Sleep.
 (Also note: Running the application should lead you to a site with sample output of the different API's)
  
-Assignment:
+# Assignment:
 Familiarize yourself with the API's, and write down (and submit to us) how you would approach the assignment to satisfy the user requirements above.
  
 Choose one of these options for your solution:
 - You can submit in writing how you would solve the assignment with a focus on explaining your thought process and considerations for the solution.
-or
 - Submit a code solution to the assignment.
 
-At the technical interview you are expected to present your solution and talk about the choices you have made.
+At the technical interview you are expected to present your solution and talk about the choices you have made.**
