@@ -1,0 +1,6 @@
+@AngularDataCase.Server_HostAddress = http://localhost:5001
+
+GET {{AngularDataCase.Server_HostAddress}}/data/
+Accept: application/json
+
+###

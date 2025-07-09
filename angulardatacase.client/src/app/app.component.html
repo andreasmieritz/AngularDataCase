@@ -1,0 +1,85 @@
+<h1 id="tableLabel">Analytics Table</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+<p *ngIf="!dataSets"><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationangular">https://aka.ms/jspsintegrationangular</a> for more details.</em></p>
+
+DataSets:
+<table *ngIf="dataSets">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>DisplayName</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let dataSet of dataSets">
+      <td>{{ dataSet.id }}</td>
+      <td>{{ dataSet.displayName }}</td>
+    </tr>
+  </tbody>
+</table>
+
+Groupings:
+<table *ngIf="groupings">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>DisplayName</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let grouping of groupings">
+      <td>{{ grouping.id }}</td>
+      <td>{{ grouping.displayName }}</td>
+    </tr>
+  </tbody>
+</table>
+
+Analytics:
+<table *ngIf="analytics">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>DisplayName</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let analytic of analytics">
+      <td>{{ analytic.id }}</td>
+      <td>{{ analytic.displayName }}</td>
+    </tr>
+  </tbody>
+</table>
+
+Node Names for grouping=SECURITY:
+<table *ngIf="groupingNodes">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>DisplayName</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let groupingNode of groupingNodes">
+      <td>{{ groupingNode.id }}</td>
+      <td>{{ groupingNode.displayName }}</td>
+    </tr>
+  </tbody>
+</table>
+
+Calculation results for Analytic=A1, DataSet=0, grouping=SECURITY:
+<table *ngIf="calculatedAnalytics">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let calculatedAnalytic of calculatedAnalytics">
+      <td>{{ calculatedAnalytic.id }}</td>
+      <td>{{ calculatedAnalytic.result }}</td>
+    </tr>
+  </tbody>
+</table>
