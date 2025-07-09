@@ -1,5 +1,6 @@
 # Repository
 In this repository you will find a sample project of Angular frontend with a C# Asp.NET backend.
+(Code is based on Visual Studio 2022, using the Angular and ASP.NET Core project example)
  
 5 endpoints are exposed from the backend.
  
