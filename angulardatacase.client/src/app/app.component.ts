@@ -7,7 +7,8 @@ interface DataSetResponse {
 }
 interface AnalyticResponse {
   id: string,
-  displayName: string
+  displayName: string,
+  checked: boolean
 }
 
 interface GroupingResponse {
@@ -37,6 +38,9 @@ export class AppComponent implements OnInit {
   public analytics: AnalyticResponse[] = [];
   public groupingNodes: NodeResponse[] = [];
   public calculatedAnalytics: CalculateNodeResponse[] = [];
+  public selectedDataSetId: DataSetResponse | null = null;
+  public selectedGrouping: GroupingResponse | null = null;
+  public selectedAnalytics: string[] | null = [];
 
   constructor(private http: HttpClient) {}
 
@@ -44,8 +48,8 @@ export class AppComponent implements OnInit {
     this.getDataSets();
     this.getGroupings();
     this.getAnalytics();
-    this.getNodeNames();
-    this.calculate();
+    //this.getNodeNames();
+    //this.calculate();
   }
 
   getDataSets() {
@@ -69,7 +73,15 @@ export class AppComponent implements OnInit {
       }
     );
   }
+ onDataSetChange() {
 
+ }
+ onAnalyticChange(id: string, checked: boolean): void {
+  console.log('analytic', id, checked);
+  this.selectedAnalytics = this.analytics
+    .filter(a => a.checked)
+    .map(a => a.id);
+}
   getAnalytics() {
     this.http.get<AnalyticResponse[]>('/api/data/getanalytics').subscribe(
       (result) => {
@@ -102,6 +114,28 @@ export class AppComponent implements OnInit {
       }
     );
   }
+
+  updateResults(): void {
+    debugger;
+  if (!this.selectedGrouping) { return; }
+
+  // GROUPING NODES
+  this.http
+      .get<NodeResponse[]>(`/api/data/getnodenames?grouping=${this.selectedGrouping}`)
+      .subscribe(nodes => (this.groupingNodes = nodes));
+
+  // CALCULATION
+  if (this.selectedAnalytics?.length) {
+    const analyticsParam = this.selectedAnalytics.join(',');
+    this.http
+        .get<CalculateNodeResponse[]>(
+          `/api/data/calculate?grouping=${this.selectedGrouping}` +
+          `&analytic=${analyticsParam}&dataSet=${this.selectedDataSetId}`)
+        .subscribe(result => (this.calculatedAnalytics = result));
+  } else {
+    this.calculatedAnalytics = [];
+  }
+}
 
   title = 'angulardatacase.client';
 }

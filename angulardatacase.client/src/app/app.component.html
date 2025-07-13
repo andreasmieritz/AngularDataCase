@@ -4,53 +4,34 @@
 
 <p *ngIf="!dataSets"><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationangular">https://aka.ms/jspsintegrationangular</a> for more details.</em></p>
 
-DataSets:
-<table *ngIf="dataSets">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let dataSet of dataSets">
-      <td>{{ dataSet.id }}</td>
-      <td>{{ dataSet.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+<!-- DATA SET ------------------------------------------------>
+<mat-form-field appearance="fill">
+  <mat-label>Choose Dataset</mat-label>
+  <mat-select [(ngModel)]="selectedDataSetId" name="dataset" (selectionChange)="updateResults()">
+    <mat-option *ngFor="let ds of dataSets" [value]="ds.id">
+      {{ ds.displayName }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
 
-Groupings:
-<table *ngIf="groupings">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let grouping of groupings">
-      <td>{{ grouping.id }}</td>
-      <td>{{ grouping.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+<!-- GROUPING ----------------------------------------------->
+<mat-form-field appearance="fill">
+  <mat-label>Choose Grouping</mat-label>
+  <mat-select [(ngModel)]="selectedGrouping" name="grouping" (selectionChange)="updateResults()">
+    <mat-option *ngFor="let g of groupings" [value]="g.id">
+      {{ g.displayName }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
 
-Analytics:
-<table *ngIf="analytics">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let analytic of analytics">
-      <td>{{ analytic.id }}</td>
-      <td>{{ analytic.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+<!-- ANALYTICS  (pick ONE implementation; list shown here) -->
+<h3>Analytics</h3>
+<mat-selection-list [(ngModel)]="selectedAnalytics" (selectionChange)="updateResults()">
+  <mat-list-option *ngFor="let a of analytics" [value]="a.id">
+    {{ a.displayName }}
+  </mat-list-option>
+</mat-selection-list>
+
 
 Node Names for grouping=SECURITY:
 <table *ngIf="groupingNodes">
