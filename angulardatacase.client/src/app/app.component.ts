@@ -1,35 +1,36 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { DataService } from './data.service';
 
-interface DataSetResponse {
-  id: number,
-  displayName: string
-}
-interface AnalyticResponse {
-  id: string,
-  displayName: string
+export interface DataSetResponse {
+  id: number;
+  displayName: string;
 }
 
-interface GroupingResponse {
-  id: string,
-  displayName: string
+export interface AnalyticResponse {
+  id: string;
+  displayName: string;
 }
 
-interface NodeResponse {
-  id: string,
-  displayName: string
+export interface GroupingResponse {
+  id: string;
+  displayName: string;
 }
 
-interface CalculateNodeResponse {
-  id: string,
-  result: number
+export interface NodeResponse {
+  id: string;
+  displayName: string;
+}
+
+export interface CalculateNodeResponse {
+  id: string;
+  result: number;
 }
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   standalone: false,
-  styleUrl: './app.component.css'
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
   public dataSets: DataSetResponse[] = [];
@@ -38,70 +39,131 @@ export class AppComponent implements OnInit {
   public groupingNodes: NodeResponse[] = [];
   public calculatedAnalytics: CalculateNodeResponse[] = [];
 
-  constructor(private http: HttpClient) {}
+  selectedDataSetId: number | null = null;
+  selectedGroupingId: string | null = null;
+  selectedAnalytics: string[] = [];
+
+  isLoading = false;
+  isLoadingNodes = false;
+  isLoadingCalc = false;
+  errorMessage: string | null = null;
+
+  constructor(private dataService: DataService) {}
 
   ngOnInit() {
-    this.getDataSets();
-    this.getGroupings();
-    this.getAnalytics();
-    this.getNodeNames();
-    this.calculate();
+    this.loadStaticData();
   }
 
-  getDataSets() {
-    this.http.get<DataSetResponse[]>('/api/data/getdatasets').subscribe(
-      (result) => {
+  private loadStaticData(): void {
+    this.dataService.getDataSets().subscribe({
+      next: (result) => {
         this.dataSets = result;
       },
-      (error) => {
+      error: (error) => {
+        this.errorMessage = 'Failed to load datasets.';
         console.error(error);
       }
-    );
-  }
+    });
 
-  getGroupings() {
-    this.http.get<GroupingResponse[]>('/api/data/getgroupings').subscribe(
-      (result) => {
+    this.dataService.getGroupings().subscribe({
+      next: (result) => {
         this.groupings = result;
       },
-      (error) => {
+      error: (error) => {
+        this.errorMessage = 'Failed to load groupings.';
         console.error(error);
       }
-    );
-  }
+    });
 
-  getAnalytics() {
-    this.http.get<AnalyticResponse[]>('/api/data/getanalytics').subscribe(
-      (result) => {
+    this.dataService.getAnalytics().subscribe({
+      next: (result) => {
         this.analytics = result;
       },
-      (error) => {
+      error: (error) => {
+        this.errorMessage = 'Failed to load analytics.';
         console.error(error);
       }
-    );
+    });
   }
 
-  getNodeNames() {
-    this.http.get<NodeResponse[]>('/api/data/getnodenames?grouping=SECURITY').subscribe(
-      (result) => {
-        this.groupingNodes = result;
+  onAnalyticsChange(event: any, analyticId: string): void {
+    const isChecked = event.target.checked;
+    
+    if (isChecked) {
+      this.selectedAnalytics = [...this.selectedAnalytics, analyticId];
+    } else {
+      this.selectedAnalytics = this.selectedAnalytics.filter(id => id !== analyticId);
+    }
+  }
+
+  loadData(): void {
+    this.errorMessage = null;
+    this.isLoading = true;
+    
+    if (!this.selectedDataSetId || !this.selectedGroupingId || this.selectedAnalytics.length === 0) {
+      this.errorMessage = 'Please select a dataset, grouping, and at least one analytic.';
+      this.isLoading = false;
+      return;
+    }
+
+    // Load nodes and calculations simultaneously
+    this.loadNodes();
+    this.loadCalculations();
+  }
+  getItemIdByTrack(index: number, item: { id: string | number }): string | number {
+    return item.id;
+  }
+  private loadNodes(): void {
+    if (!this.selectedGroupingId) return;
+
+    this.isLoadingNodes = true;
+    this.groupingNodes = [];
+
+    this.dataService.getNodeNames(this.selectedGroupingId).subscribe({
+      next: (nodes) => {
+        this.groupingNodes = nodes;
+        this.isLoadingNodes = false;
+        this.checkLoadingComplete();
       },
-      (error) => {
+      error: (error) => {
+        this.errorMessage = 'Failed to load node names. Please try again.';
+        this.isLoadingNodes = false;
+        this.checkLoadingComplete();
         console.error(error);
       }
-    );
+    });
   }
 
-  calculate() {
-    this.http.get<CalculateNodeResponse[]>('/api/data/calculate?grouping=SECURITY&analytic=A1&dataSet=0').subscribe(
-      (result) => {
-        this.calculatedAnalytics = result;
+  private loadCalculations(): void {
+    if (!this.selectedGroupingId || !this.selectedDataSetId || this.selectedAnalytics.length === 0) return;
+
+    this.isLoadingCalc = true;
+    this.calculatedAnalytics = [];
+
+    this.dataService.getCalculateResults(
+      this.selectedGroupingId,
+      this.selectedAnalytics.join(','),
+      this.selectedDataSetId
+    ).subscribe({
+      next: (results) => {
+        this.calculatedAnalytics = results;
+        this.isLoadingCalc = false;
+        this.checkLoadingComplete();
       },
-      (error) => {
+      error: (error) => {
+        this.errorMessage = 'Failed to load calculation results. Please try again.';
+        this.isLoadingCalc = false;
+        this.checkLoadingComplete();
         console.error(error);
       }
-    );
+    });
   }
 
-  title = 'angulardatacase.client';
+  private checkLoadingComplete(): void {
+    if (!this.isLoadingNodes && !this.isLoadingCalc) {
+      this.isLoading = false;
+    }
+  }
+
+
 }
