@@ -29,7 +29,7 @@
 
 .mat-card-title {
   color: var(--primary-navy);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .mat-form-field-appearance-fill .mat-form-field-flex {
@@ -113,7 +113,7 @@ h2 small {
   margin: 8px 0 24px;
 }
 .node-table-wrapper{
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
   margin-top: 16px;
 }

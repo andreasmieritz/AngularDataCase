@@ -15,6 +15,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressBarModule }   from '@angular/material/progress-bar';
+import { DisplayNamePipe } from './display-name-pipe';
 
 @NgModule({
   declarations: [
@@ -34,7 +36,9 @@ import { MatDividerModule } from '@angular/material/divider';
     MatCardModule,
     MatGridListModule,
     MatTableModule,
-    MatDividerModule
+    MatDividerModule,
+    MatProgressBarModule,
+    DisplayNamePipe
   ],
   providers: [],
   bootstrap: [AppComponent]

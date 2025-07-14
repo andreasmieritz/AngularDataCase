@@ -1,141 +1,157 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { MatSelectionListChange } from '@angular/material/list';
+import {
+  BehaviorSubject, forkJoin, of, Subject
+} from 'rxjs';
+import {
+  switchMap, distinctUntilChanged, tap, shareReplay, takeUntil,
+  finalize
+} from 'rxjs/operators';
 
-interface DataSetResponse {
-  id: number,
-  displayName: string
-}
-interface AnalyticResponse {
-  id: string,
-  displayName: string,
-  checked: boolean
+interface DataSetResponse { id: number; displayName: string; }
+interface AnalyticResponse { id: string; displayName: string; checked: boolean; }
+interface GroupingResponse { id: string; displayName: string; }
+interface NodeResponse { id: string; displayName: string; }
+interface CalculateNodeResponse { id: string; result: number; }
+
+interface FilterState {
+  datasetId: number | null;
+  groupingId: string | null;
+  analytics: string[];
 }
 
-interface GroupingResponse {
-  id: string,
-  displayName: string
-}
-
-interface NodeResponse {
-  id: string,
-  displayName: string
-}
-
-interface CalculateNodeResponse {
-  id: string,
-  result: number
-}
+const nodeCache = new Map<string, NodeResponse[]>();
+const calcCache = new Map<string, CalculateNodeResponse[]>();
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
+  styleUrl: './app.component.css',
   standalone: false,
-  styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
-  public dataSets: DataSetResponse[] = [];
-  public groupings: GroupingResponse[] = [];
-  public analytics: AnalyticResponse[] = [];
-  public groupingNodes: NodeResponse[] = [];
-  public calculatedAnalytics: CalculateNodeResponse[] = [];
-  public selectedDataSetId: DataSetResponse | null = null;
-  public selectedGrouping: GroupingResponse | null = null;
-  public selectedAnalytics: string[] | null = [];
+export class AppComponent implements OnInit, OnDestroy {
 
-  constructor(private http: HttpClient) {}
+  dataSets: DataSetResponse[] = [];
+  groupings: GroupingResponse[] = [];
+  analytics: AnalyticResponse[] = [];
 
-  ngOnInit() {
-    this.getDataSets();
-    this.getGroupings();
-    this.getAnalytics();
-    //this.getNodeNames();
-    //this.calculate();
+  groupingNodes: NodeResponse[] = [];
+  calculatedAnalytics: CalculateNodeResponse[] = [];
+
+  selectedDataSetId: number | null = null;
+  selectedGrouping: string | null = null;
+  selectedAnalytics: string[] = [];
+
+  isLoadingNodes = false;
+  isLoadingCalc = false;
+
+  private destroy$ = new Subject<void>();
+  private filter$ = new BehaviorSubject<FilterState>({
+    datasetId: null,
+    groupingId: null,
+    analytics: []
+  });
+  isLoadingDropdowns: boolean | undefined;
+
+  constructor(private http: HttpClient) { }
+
+  ngOnInit(): void {
+    this.loadStaticLists();
+
+    this.filter$.pipe(
+      distinctUntilChanged((a, b) => a.groupingId === b.groupingId),
+      switchMap(f => {
+        if (!f.groupingId) { return of([] as NodeResponse[]); }
+
+        const key = f.groupingId;
+        if (nodeCache.has(key)) { return of(nodeCache.get(key)!); }
+
+        this.isLoadingNodes = true;
+
+        return this.http.get<NodeResponse[]>(`/api/data/getnodenames?grouping=${key}`)
+          .pipe(
+            tap(res => nodeCache.set(key, res)),
+            tap(() => (this.isLoadingNodes = false))
+          );
+      }),
+      shareReplay(1),
+      takeUntil(this.destroy$)
+    )
+      .subscribe(res => (this.groupingNodes = res));
+
+    this.filter$.pipe(
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+      switchMap(f => {
+        if (!f.groupingId || f.analytics.length === 0) {
+          return of([] as CalculateNodeResponse[]);
+        }
+
+        const key = JSON.stringify(f);
+        if (calcCache.has(key)) { return of(calcCache.get(key)!); }
+
+        this.isLoadingCalc = true;
+
+        const analyticsParam = f.analytics.join(',');
+        const url =
+          `/api/data/calculate?grouping=${f.groupingId}` +
+          `&analytic=${analyticsParam}&dataSet=${f.datasetId ?? ''}`;
+
+        return this.http.get<CalculateNodeResponse[]>(url).pipe(
+          tap(res => calcCache.set(key, res)),
+          tap(() => (this.isLoadingCalc = false))
+        );
+      }),
+      shareReplay(1),
+      takeUntil(this.destroy$)
+    )
+      .subscribe(res => (this.calculatedAnalytics = res));
   }
 
-  getDataSets() {
-    this.http.get<DataSetResponse[]>('/api/data/getdatasets').subscribe(
-      (result) => {
-        this.dataSets = result;
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  private loadStaticLists(): void {
+    this.isLoadingDropdowns = true;
+
+    forkJoin({
+      dataSets: this.http.get<DataSetResponse[]>('/api/data/getdatasets'),
+      groupings: this.http.get<GroupingResponse[]>('/api/data/getgroupings'),
+      analytics: this.http.get<AnalyticResponse[]>('/api/data/getanalytics')
+    })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoadingDropdowns = false)
+      )
+      .subscribe(({ dataSets, groupings, analytics }) => {
+        this.dataSets = dataSets;
+        this.groupings = groupings;
+        this.analytics = analytics;
+      });
   }
 
-  getGroupings() {
-    this.http.get<GroupingResponse[]>('/api/data/getgroupings').subscribe(
-      (result) => {
-        this.groupings = result;
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
-  }
- onDataSetChange() {
-
- }
- onAnalyticChange(id: string, checked: boolean): void {
-  console.log('analytic', id, checked);
-  this.selectedAnalytics = this.analytics
-    .filter(a => a.checked)
-    .map(a => a.id);
-}
-  getAnalytics() {
-    this.http.get<AnalyticResponse[]>('/api/data/getanalytics').subscribe(
-      (result) => {
-        this.analytics = result;
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
+  updateDataset(id: number | null) {
+    const s = this.filter$.value;
+    this.filter$.next({ ...s, datasetId: id });
   }
 
-  getNodeNames() {
-    this.http.get<NodeResponse[]>('/api/data/getnodenames?grouping=SECURITY').subscribe(
-      (result) => {
-        this.groupingNodes = result;
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
+  updateGrouping(id: string | null) {
+    const s = this.filter$.value;
+    this.filter$.next({ ...s, groupingId: id });
   }
 
-  calculate() {
-    this.http.get<CalculateNodeResponse[]>('/api/data/calculate?grouping=SECURITY&analytic=A1&dataSet=0').subscribe(
-      (result) => {
-        this.calculatedAnalytics = result;
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
+  onAnalyticsChange(evt: MatSelectionListChange) {
+    const selectedValues = evt.source.selectedOptions.selected.map(item => item.value);
+    this.updateAnalytics(selectedValues);
   }
 
-  updateResults(): void {
-    debugger;
-  if (!this.selectedGrouping) { return; }
-
-  // GROUPING NODES
-  this.http
-      .get<NodeResponse[]>(`/api/data/getnodenames?grouping=${this.selectedGrouping}`)
-      .subscribe(nodes => (this.groupingNodes = nodes));
-
-  // CALCULATION
-  if (this.selectedAnalytics?.length) {
-    const analyticsParam = this.selectedAnalytics.join(',');
-    this.http
-        .get<CalculateNodeResponse[]>(
-          `/api/data/calculate?grouping=${this.selectedGrouping}` +
-          `&analytic=${analyticsParam}&dataSet=${this.selectedDataSetId}`)
-        .subscribe(result => (this.calculatedAnalytics = result));
-  } else {
-    this.calculatedAnalytics = [];
+  updateAnalytics(list: string[]) {
+    const s = this.filter$.value;
+    this.filter$.next({ ...s, analytics: list });
   }
-}
 
-  title = 'angulardatacase.client';
+  trackById(_: number, item: { id: string | number }) {
+    return item.id;
+  }
 }
