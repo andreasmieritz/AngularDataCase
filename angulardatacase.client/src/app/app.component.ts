@@ -5,18 +5,22 @@ export interface DataSetResponse {
   id: number;
   displayName: string;
 }
+
 export interface AnalyticResponse {
   id: string;
   displayName: string;
 }
+
 export interface GroupingResponse {
   id: string;
   displayName: string;
 }
+
 export interface NodeResponse {
   id: string;
   displayName: string;
 }
+
 export interface CalculateNodeResponse {
   id: string;
   result: number;
@@ -32,87 +36,27 @@ export class AppComponent implements OnInit {
   public dataSets: DataSetResponse[] = [];
   public groupings: GroupingResponse[] = [];
   public analytics: AnalyticResponse[] = [];
+  public groupingNodes: NodeResponse[] = [];
   public calculatedAnalytics: CalculateNodeResponse[] = [];
-  public nodeResults: { nodeName: string, result: number }[] = [];
-  selectedDataSet: DataSetResponse | null = null;
-  selectedGrouping: GroupingResponse | null = null;
-  selectedAnalytics: AnalyticResponse | null= null;
-  displayedAnalytics: AnalyticResponse | null = null;
-  isLoading: boolean = false;
+
+  selectedDataSetId: number | null = null;
+  selectedGroupingId: string | null = null;
+  selectedAnalytics: string[] = [];
+
+  isLoading = false;
+  isLoadingNodes = false;
+  isLoadingCalc = false;
   errorMessage: string | null = null;
 
   constructor(private dataService: DataService) {}
 
   ngOnInit() {
-    this.getDataSets();
-    this.getGroupings();
-    this.getAnalytics();
+    this.loadStaticData();
   }
 
-  loadData() {
-   this.nodeResults = [];
-    this.errorMessage = null;
-    this.isLoading = true;
-
-    if (!this.selectedDataSet || !this.selectedGrouping || !this.selectedAnalytics) {
-      this.errorMessage = 'Please select a dataset, grouping, and an analytic.';
-      this.isLoading = false;
-      return;
-    }
-
-    this.displayedAnalytics = this.selectedAnalytics;
-
-    this.dataService.getNodeNames(this.selectedGrouping.id).subscribe({
-      next: (nodes) => {
-        const nodeMap = new Map(nodes.map(n => [n.id, n.displayName]));
-        this.dataService.getCalculateResults(
-          this.selectedGrouping!.id,
-          this.selectedAnalytics!.id,
-          this.selectedDataSet!.id
-        ).subscribe({
-          next: (results: CalculateNodeResponse[]) => {
-            this.nodeResults = results
-              .filter(r => nodeMap.has(r.id)) 
-              .map(r => ({
-                nodeName: nodeMap.get(r.id) ?? r.id,
-                result: r.result
-              }));
-
-            this.isLoading = false;
-            if (this.nodeResults.length === 0) {
-              this.errorMessage = 'No results available for the selected combination.';
-            }
-          },
-          error: (error) => {
-            this.errorMessage = 'Failed to load analytic results. Please try again.';
-            this.isLoading = false;
-            console.error(error);
-          }
-        });
-      },
-      error: (error) => {
-        this.errorMessage = 'Failed to load node names. Please try again.';
-        this.isLoading = false;
-        console.error(error);
-      }
-    });
-  }
-
-  
-  getGroupings() {
-    this.dataService.getGroupings().subscribe({
-      next: (result: GroupingResponse[]) => {
-        this.groupings = result;
-      },
-      error: (error) => {
-        this.errorMessage = 'Failed to load groupings.';
-        console.error(error);
-      }
-    });
-  }
-  getDataSets() {
+  private loadStaticData(): void {
     this.dataService.getDataSets().subscribe({
-      next: (result: DataSetResponse[]) => {
+      next: (result) => {
         this.dataSets = result;
       },
       error: (error) => {
@@ -120,12 +64,19 @@ export class AppComponent implements OnInit {
         console.error(error);
       }
     });
-  }
 
+    this.dataService.getGroupings().subscribe({
+      next: (result) => {
+        this.groupings = result;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to load groupings.';
+        console.error(error);
+      }
+    });
 
-   getAnalytics() {
     this.dataService.getAnalytics().subscribe({
-      next: (result: AnalyticResponse[]) => {
+      next: (result) => {
         this.analytics = result;
       },
       error: (error) => {
@@ -134,4 +85,85 @@ export class AppComponent implements OnInit {
       }
     });
   }
+
+  onAnalyticsChange(event: any, analyticId: string): void {
+    const isChecked = event.target.checked;
+    
+    if (isChecked) {
+      this.selectedAnalytics = [...this.selectedAnalytics, analyticId];
+    } else {
+      this.selectedAnalytics = this.selectedAnalytics.filter(id => id !== analyticId);
+    }
+  }
+
+  loadData(): void {
+    this.errorMessage = null;
+    this.isLoading = true;
+    
+    if (!this.selectedDataSetId || !this.selectedGroupingId || this.selectedAnalytics.length === 0) {
+      this.errorMessage = 'Please select a dataset, grouping, and at least one analytic.';
+      this.isLoading = false;
+      return;
+    }
+
+    // Load nodes and calculations simultaneously
+    this.loadNodes();
+    this.loadCalculations();
+  }
+  getItemIdByTrack(index: number, item: { id: string | number }): string | number {
+    return item.id;
+  }
+  private loadNodes(): void {
+    if (!this.selectedGroupingId) return;
+
+    this.isLoadingNodes = true;
+    this.groupingNodes = [];
+
+    this.dataService.getNodeNames(this.selectedGroupingId).subscribe({
+      next: (nodes) => {
+        this.groupingNodes = nodes;
+        this.isLoadingNodes = false;
+        this.checkLoadingComplete();
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to load node names. Please try again.';
+        this.isLoadingNodes = false;
+        this.checkLoadingComplete();
+        console.error(error);
+      }
+    });
+  }
+
+  private loadCalculations(): void {
+    if (!this.selectedGroupingId || !this.selectedDataSetId || this.selectedAnalytics.length === 0) return;
+
+    this.isLoadingCalc = true;
+    this.calculatedAnalytics = [];
+
+    this.dataService.getCalculateResults(
+      this.selectedGroupingId,
+      this.selectedAnalytics.join(','),
+      this.selectedDataSetId
+    ).subscribe({
+      next: (results) => {
+        this.calculatedAnalytics = results;
+        this.isLoadingCalc = false;
+        this.checkLoadingComplete();
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to load calculation results. Please try again.';
+        this.isLoadingCalc = false;
+        this.checkLoadingComplete();
+        console.error(error);
+      }
+    });
+  }
+
+  private checkLoadingComplete(): void {
+    if (!this.isLoadingNodes && !this.isLoadingCalc) {
+      this.isLoading = false;
+    }
+  }
+
+
 }
