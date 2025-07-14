@@ -1,14 +1,128 @@
-﻿:host {
-    max-width: 1280px;
-    padding: 2rem;
-    text-align: center;
+﻿:root {
+  --primary-navy:   #003366; 
+  --accent-gold:    #F9A826; 
+
+  --bg-light:  #f5f7fa;
+  --card-bg:   #ffffff;
+  --border:    #d9d9d9;
+  --text:      #575454;
+}
+
+:host {
+  max-width: 1280px;
+  padding: 2rem;
+  text-align: center;
+  background: var(--bg-light);
+  color: var(--text);
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.mat-toolbar {
+  background: var(--primary-navy);
+  color: #fff;
+}
+
+.mat-card.filters {
+  background: var(--card-bg);
+  border-left: 6px solid var(--accent-gold);
+}
+
+.mat-card-title {
+  color: var(--primary-navy);
+  font-weight: 400;
+}
+
+.mat-form-field-appearance-fill .mat-form-field-flex {
+  background: #fafafa;
+}
+
+
+table[mat-table] {
+  width: 100%;
+  margin-bottom: 32px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+table[mat-table] th {
+  background: var(--primary-navy);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: .03em;
 }
 
 th, td {
-    padding-left: 1rem;
-    padding-right: 1rem;
+  padding: 0.75rem 1rem;
 }
 
-table {
-    margin: 0 auto;
+tr.mat-row:nth-child(even) {
+  background: #f9fbfd;
 }
+
+h2 {
+  margin: 32px 0 16px;
+  font-weight: 600;
+  color: var(--primary-navy);
+}
+
+h2 small {
+  color: #666;
+  font-weight: 400;
+}
+
+.analytics-heading {
+  margin: 24px 0 8px;
+  color: var(--primary-navy);
+}
+
+.page-wrapper {
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.grid {
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
+}
+
+
+.analytics-list {
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.mat-list-option.mat-list-item.mat-list-option-selected:not(.mat-list-option-disabled) {
+  background: rgba(249, 168, 38, 0.15);
+}
+
+
+.my-24 {
+  margin: 24px 0;
+}
+
+.placeholder {
+  color: #777;
+  font-style: italic;
+  margin: 8px 0 24px;
+}
+.node-table-wrapper{
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+}
+@media (max-width: 767px) {
+  .grid {
+    display: block;
+  }
+  .grid mat-grid-tile {
+    width: 100%;
+  }
+}
+

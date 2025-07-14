@@ -1,85 +1,116 @@
-<h1 id="tableLabel">Analytics Table</h1>
+<h1>Analytics Dashboard</h1>
 
-<p>This component demonstrates fetching data from the server.</p>
+<div class="page-wrapper">
 
-<p *ngIf="!dataSets"><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationangular">https://aka.ms/jspsintegrationangular</a> for more details.</em></p>
+  <mat-card class="filters">
+    <mat-card-header>
+      <mat-card-title>Filters</mat-card-title>
+    </mat-card-header>
 
-DataSets:
-<table *ngIf="dataSets">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let dataSet of dataSets">
-      <td>{{ dataSet.id }}</td>
-      <td>{{ dataSet.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+    <mat-card-content>
+      <div>
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Dataset</mat-label>
+          <mat-select [(ngModel)]="selectedDataSetId" name="dataset" (selectionChange)="updateDataset($event.value)">
+            <mat-option *ngFor="let ds of dataSets" [value]="ds.id">
+              {{ ds.displayName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div>
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Grouping</mat-label>
+          <mat-select [(ngModel)]="selectedGrouping" name="grouping" (selectionChange)="updateGrouping($event.value)">
+            <mat-option *ngFor="let g of groupings" [value]="g.id">
+              {{ g.displayName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
 
-Groupings:
-<table *ngIf="groupings">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let grouping of groupings">
-      <td>{{ grouping.id }}</td>
-      <td>{{ grouping.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+      <div>
+        <h3 class="analytics-heading">Analytics</h3>
+        <mat-selection-list [(ngModel)]="selectedAnalytics" (selectionChange)="onAnalyticsChange($event)"
+          class="analytics-list">
+          <mat-list-option *ngFor="let a of analytics" [value]="a.id">
+            {{ a.displayName }}
+          </mat-list-option>
+        </mat-selection-list>
+      </div>
+    </mat-card-content>
+  </mat-card>
 
-Analytics:
-<table *ngIf="analytics">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let analytic of analytics">
-      <td>{{ analytic.id }}</td>
-      <td>{{ analytic.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+  <mat-divider class="my-24"></mat-divider>
 
-Node Names for grouping=SECURITY:
-<table *ngIf="groupingNodes">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>DisplayName</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let groupingNode of groupingNodes">
-      <td>{{ groupingNode.id }}</td>
-      <td>{{ groupingNode.displayName }}</td>
-    </tr>
-  </tbody>
-</table>
+  <mat-card>
+    <ng-container *ngIf="groupingNodes?.length; else noGrouping">
+      <h2>
+        Node Names
+        <small *ngIf="selectedGrouping">
+          (grouping&nbsp;=&nbsp;{{ selectedGrouping }})
+        </small>
+      </h2>
 
-Calculation results for Analytic=A1, DataSet=0, grouping=SECURITY:
-<table *ngIf="calculatedAnalytics">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Result</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let calculatedAnalytic of calculatedAnalytics">
-      <td>{{ calculatedAnalytic.id }}</td>
-      <td>{{ calculatedAnalytic.result }}</td>
-    </tr>
-  </tbody>
-</table>
+      <div class="node-table-wrapper">
+        <table mat-table [dataSource]="groupingNodes" class="mat-elevation-z1">
+
+          <!-- ID Column -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>ID</th>
+            <td mat-cell *matCellDef="let node">{{ node.id }}</td>
+          </ng-container>
+
+          <!-- DisplayName Column -->
+          <ng-container matColumnDef="displayName">
+            <th mat-header-cell *matHeaderCellDef>Display&nbsp;Name</th>
+            <td mat-cell *matCellDef="let node">{{ node.displayName }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['id','displayName']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['id','displayName'];"></tr>
+        </table>
+      </div>
+    </ng-container>
+    <ng-template #noGrouping>
+      <p class="placeholder">Select a grouping to load nodes.</p>
+    </ng-template>
+  </mat-card>
+  <mat-divider class="my-24"></mat-divider>
+  <mat-card>
+    <mat-progress-bar *ngIf="isLoadingCalc" mode="indeterminate"></mat-progress-bar>
+    <ng-container *ngIf="calculatedAnalytics?.length; else noCalc">
+      <h2>
+        Calculation Results
+        <small *ngIf="selectedAnalytics?.length">
+          (analytics = {{ selectedAnalytics | displayName:analytics }};
+          dataset = {{ selectedDataSetId | displayName:dataSets }};
+          grouping = {{ selectedGrouping | displayName:groupings }})
+        </small>
+      </h2>
+
+      <div class="node-table-wrapper">
+        <table mat-table [dataSource]="calculatedAnalytics" class="mat-elevation-z1">
+
+          <!-- ID Column -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>ID</th>
+            <td mat-cell *matCellDef="let calc">{{ calc.id }}</td>
+          </ng-container>
+
+          <!-- Result Column -->
+          <ng-container matColumnDef="result">
+            <th mat-header-cell *matHeaderCellDef>Result</th>
+            <td mat-cell *matCellDef="let calc">{{ calc.result | number:'1.2-2' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['id','result']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['id','result'];"></tr>
+        </table>
+      </div>
+    </ng-container>
+    <ng-template #noCalc>
+      <p class="placeholder">Choose at least one analytic to see results.</p>
+    </ng-template>
+  </mat-card>
+</div>
