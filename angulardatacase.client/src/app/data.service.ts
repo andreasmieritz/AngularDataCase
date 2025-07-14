@@ -1,17 +1,23 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { DataSetResponse, GroupingResponse, AnalyticResponse, NodeResponse, CalculateNodeResponse } from './app.component';
+import { 
+  DataSetResponse, 
+  GroupingResponse, 
+  AnalyticResponse, 
+  NodeResponse, 
+  CalculateNodeResponse 
+} from './app.component';
 
 @Injectable({
   providedIn: 'root' 
 })
 export class DataService {
-   apiUrl = '/api/data';
+  private readonly apiUrl = '/api/data';
 
-  constructor(public http: HttpClient) {}
+  constructor(private http: HttpClient) {}
   
-  // start: These 3 api calls are used to fetch datasets, groupings, and analytic
+  // API calls for fetching datasets, groupings, and analytics
   getDataSets(): Observable<DataSetResponse[]> {
     return this.http.get<DataSetResponse[]>(`${this.apiUrl}/getdatasets`);
   }
@@ -23,12 +29,17 @@ export class DataService {
   getAnalytics(): Observable<AnalyticResponse[]> {
     return this.http.get<AnalyticResponse[]>(`${this.apiUrl}/getanalytics`);
   }
-// End:
+
+  // API call for getting node names based on grouping
   getNodeNames(groupingId: string): Observable<NodeResponse[]> {
     return this.http.get<NodeResponse[]>(`${this.apiUrl}/getnodenames?grouping=${groupingId}`);
   }
 
-  getCalculateResults(groupingId: string, analyticId: string, dataSetId: number): Observable<CalculateNodeResponse[]> {
-    return this.http.get<CalculateNodeResponse[]>(`${this.apiUrl}/calculate?grouping=${groupingId}&analytic=${analyticId}&dataSet=${dataSetId}`);
+  // API call for getting calculation results
+  // Updated to handle multiple analytics (comma-separated)
+  getCalculateResults(groupingId: string, analyticIds: string, dataSetId: number): Observable<CalculateNodeResponse[]> {
+    return this.http.get<CalculateNodeResponse[]>(
+      `${this.apiUrl}/calculate?grouping=${groupingId}&analytic=${analyticIds}&dataSet=${dataSetId}`
+    );
   }
 }

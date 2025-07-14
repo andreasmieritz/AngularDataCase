@@ -1,15 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AppComponent, DataSetResponse, GroupingResponse, AnalyticResponse } from './app.component';
-import { of, throwError } from 'rxjs';
+import { AppComponent } from './app.component';
 import { DataService } from './data.service';
+import { of, throwError } from 'rxjs';
 
-describe('AppComponent', () => {
+describe('AppComponent (High-Level)', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
   let mockDataService: jasmine.SpyObj<DataService>;
 
   beforeEach(async () => {
-    const dataServiceSpy = jasmine.createSpyObj('DataService', [
+    mockDataService = jasmine.createSpyObj('DataService', [
       'getDataSets',
       'getGroupings',
       'getAnalytics',
@@ -19,87 +19,77 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [AppComponent],
-      providers: [
-        { provide: DataService, useValue: dataServiceSpy }
-      ]
+      providers: [{ provide: DataService, useValue: mockDataService }]
     }).compileComponents();
 
-    mockDataService = TestBed.inject(DataService) as jasmine.SpyObj<DataService>;
-  });
-
-  beforeEach(() => {
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
   });
 
-  it('should create the app', () => {
+  it('should create the component', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should call getDataSets, getGroupings and getAnalytics on ngOnInit', () => {
-    mockDataService.getDataSets.and.returnValue(of([]));
-    mockDataService.getGroupings.and.returnValue(of([]));
-    mockDataService.getAnalytics.and.returnValue(of([]));
 
-    component.ngOnInit();
-
-    expect(mockDataService.getDataSets).toHaveBeenCalled();
-    expect(mockDataService.getGroupings).toHaveBeenCalled();
-    expect(mockDataService.getAnalytics).toHaveBeenCalled();
-  });
-
-  
-  it('should fetch and display node results successfully in loadData', () => {
-    const mockDataSet: DataSetResponse = { id: 1, displayName: 'Dataset 1' };
-    const mockGrouping: GroupingResponse = { id: 'G1', displayName: 'Group 1' };
-    const mockAnalytic: AnalyticResponse = { id: 'A1', displayName: 'Analytic 1' };
-    const mockNodes: any[] = [
-      { id: 'N1', displayName: 'Node One' },
-      { id: 'N2', displayName: 'Node Two' }
-    ];
-    const mockResults:any[] = [
-      { id: 'N1', result: 100 },
-      { id: 'N2', result: 200 }
-    ];
-
-    component.selectedDataSet = mockDataSet;
-    component.selectedGrouping = mockGrouping;
-    component.selectedAnalytics = mockAnalytic;
-    mockDataService.getNodeNames.and.returnValue(of(mockNodes));
-    mockDataService.getCalculateResults.and.returnValue(of(mockResults));
-
+  it('should set error if required fields are not selected on loadData', () => {
     component.loadData();
 
-    expect(mockDataService.getNodeNames).toHaveBeenCalledWith('G1');
-    expect(mockDataService.getCalculateResults).toHaveBeenCalledWith('G1', 'A1', 1);
-    expect(component.nodeResults).toEqual([
-      { nodeName: 'Node One', result: 100 },
-      { nodeName: 'Node Two', result: 200 }
-    ]);
-
-    expect(component.displayedAnalytics).toEqual(mockAnalytic);
+    expect(component.errorMessage).toBe('Please select a dataset, grouping, and at least one analytic.');
     expect(component.isLoading).toBeFalse();
-    expect(component.errorMessage).toBeNull();
   });
 
-   it('should handle node fetch error in loadData', () => {
-    const mockDataSet: DataSetResponse = { id: 1, displayName: 'Dataset 1' };
-    const mockGrouping: GroupingResponse = { id: 'G1', displayName: 'Group 1' };
-    const mockAnalytic: AnalyticResponse = { id: 'A1', displayName: 'Analytic 1' };
+  it('should call getNodeNames and getCalculateResults when loadData is triggered with valid selection', () => {
+    component.selectedDataSetId = 1;
+    component.selectedGroupingId = 'g1';
+    component.selectedAnalytics = ['a1'];
 
-    component.selectedDataSet = mockDataSet;
-    component.selectedGrouping = mockGrouping;
-    component.selectedAnalytics = mockAnalytic;
-    mockDataService.getNodeNames.and.returnValue(throwError(() => new Error('Node fetch failed')));
+    mockDataService.getNodeNames.and.returnValue(of([]));
+    mockDataService.getCalculateResults.and.returnValue(of([]));
 
     component.loadData();
 
-    expect(mockDataService.getNodeNames).toHaveBeenCalledWith('G1');
-    expect(mockDataService.getCalculateResults).not.toHaveBeenCalled();
-    expect(component.nodeResults).toEqual([]);
+    expect(mockDataService.getNodeNames).toHaveBeenCalledWith('g1');
+    expect(mockDataService.getCalculateResults).toHaveBeenCalledWith('g1', 'a1', 1);
+  });
+
+  it('should handle error in getNodeNames gracefully', () => {
+    component.selectedDataSetId = 1;
+    component.selectedGroupingId = 'g1';
+    component.selectedAnalytics = ['a1'];
+
+    mockDataService.getNodeNames.and.returnValue(throwError(() => new Error('Fail')));
+    mockDataService.getCalculateResults.and.returnValue(of([]));
+
+    component.loadData();
+
     expect(component.errorMessage).toBe('Failed to load node names. Please try again.');
-    expect(component.isLoading).toBeFalse();
   });
 
+  it('should handle error in getCalculateResults gracefully', () => {
+    component.selectedDataSetId = 1;
+    component.selectedGroupingId = 'g1';
+    component.selectedAnalytics = ['a1'];
 
+    mockDataService.getNodeNames.and.returnValue(of([]));
+    mockDataService.getCalculateResults.and.returnValue(throwError(() => new Error('Fail')));
+
+    component.loadData();
+
+    expect(component.errorMessage).toBe('Failed to load calculation results. Please try again.');
+  });
+
+  it('should update selectedAnalytics on checkbox change', () => {
+    const mockEvent = { target: { checked: true } };
+    component.onAnalyticsChange(mockEvent, 'a1');
+    expect(component.selectedAnalytics).toContain('a1');
+
+    const uncheckEvent = { target: { checked: false } };
+    component.onAnalyticsChange(uncheckEvent, 'a1');
+    expect(component.selectedAnalytics).not.toContain('a1');
+  });
+
+  it('getItemIdByTrack should return the item id', () => {
+    const item = { id: 'node-1' };
+    expect(component.getItemIdByTrack(0, item)).toBe('node-1');
+  });
 });

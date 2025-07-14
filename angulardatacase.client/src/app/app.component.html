@@ -1,51 +1,112 @@
 <div class="container">
-  <div class="form-control">
-    <label for="datasetSelect">Select Dataset:</label>
-    <select id="datasetSelect" [(ngModel)]="selectedDataSet">
-      <option *ngFor="let ds of dataSets" [ngValue]="ds">{{ ds.displayName }}</option>
-    </select>
+  <h1>Analytics Table</h1>
+  <p class="para">This component demonstrates fetching data from the server.</p>
+  <div class="filters-section">
+    <div class="filters-card">
+      <div class="form-control">
+        <label for="datasetSelect">Dataset:</label>
+        <select id="datasetSelect" [(ngModel)]="selectedDataSetId">
+          <option value="">Select Dataset</option>
+          <option *ngFor="let ds of dataSets" [value]="ds.id">{{ ds.displayName }}</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label for="groupingSelect">Grouping:</label>
+        <select id="groupingSelect" [(ngModel)]="selectedGroupingId">
+          <option value="">Select Grouping</option>
+          <option *ngFor="let g of groupings" [value]="g.id">{{ g.displayName }}</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label>Analytics:</label>
+        <div class="analytics-container">
+          <div class="analytics-item" *ngFor="let analytic of analytics">
+            <input type="checkbox" 
+                   [id]="'analytics_' + analytic.id" 
+                   [value]="analytic.id" 
+                   [checked]="selectedAnalytics.includes(analytic.id)"
+                   (change)="onAnalyticsChange($event, analytic.id)">
+            <label [for]="'analytics_' + analytic.id">{{ analytic.displayName }}</label>
+          </div>
+        </div>
+      </div>
+
+      <button (click)="loadData()" 
+              [disabled]="isLoading || !selectedDataSetId || !selectedGroupingId">
+        {{ isLoading ? 'Loading...' : 'Load Data' }}
+      </button>
+    </div>
   </div>
-  <div class="form-control">
-    <label for="groupingSelect">Select Grouping:</label>
-    <select id="groupingSelect" [(ngModel)]="selectedGrouping">
-      <option *ngFor="let g of groupings" [ngValue]="g">{{ g.displayName }}</option>
-    </select>
+
+  <div class="results-wrapper">
+    <!-- Node Names Table -->
+    <div class="results-section">
+      <div class="results-card">
+        <h2>Node Names</h2>
+        
+        <div *ngIf="isLoadingNodes" class="loading">
+          Loading nodes...
+        </div>
+        
+        <div *ngIf="groupingNodes.length > 0 && !isLoadingNodes" class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Display Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let node of groupingNodes">
+                <td>{{ node.id }}</td>
+                <td>{{ node.displayName }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div *ngIf="groupingNodes.length === 0 && !isLoadingNodes" class="placeholder">
+          <p>No Data Available.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calculation Results Table -->
+    <div class="results-section">
+      <div class="results-card">
+        <h2>Calculation Results</h2>
+        
+        <div *ngIf="isLoadingCalc" class="loading">
+          Loading calculations...
+        </div>
+        
+        <div *ngIf="calculatedAnalytics.length > 0 && !isLoadingCalc" class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let calc of calculatedAnalytics">
+                <td>{{ calc.id }}</td>
+                <td>{{ calc.result | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div *ngIf="calculatedAnalytics.length === 0 && !isLoadingCalc" class="placeholder">
+          <p>No Data Available Kindly select analytic to see results.</p>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="form-control">
-    <label for="analyticsSelect">Select Analytics:</label>
-    <select id="analyticsSelect" [(ngModel)]="selectedAnalytics">
-      <option *ngFor="let a of analytics" [ngValue]="a">{{ a.displayName }}</option>
-    </select>
-  </div>
-  <button (click)="loadData()" [disabled]="isLoading || !selectedDataSet || !selectedGrouping || !selectedAnalytics">
-    {{ isLoading ? 'Loading...' : 'Load Data' }}
-  </button>
 
   <div *ngIf="errorMessage" class="error-message">
     {{ errorMessage }}
   </div>
-
-  <div *ngIf="nodeResults.length > 0 && !isLoading" class="table-container">
-    <h2>Results</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Node Name</th>
-           <th>{{ displayedAnalytics?.displayName || 'Analytic' }}</th>
-        </tr>
-      </thead>
-     <tbody class="table-body-container">
-        <tr *ngFor="let nodeResult of nodeResults">
-          <td>{{ nodeResult.nodeName }}</td>
-          <td>{{ nodeResult.result }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div *ngIf="isLoading" class="loading">
-    Loading data...
-  </div>
 </div>
-
-
